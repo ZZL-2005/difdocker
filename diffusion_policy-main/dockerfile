@@ -1,0 +1,35 @@
+# CUDA 12.4 + Ubuntu 22.04 官方运行时镜像
+FROM nvidia/cuda:12.4.0-runtime-ubuntu22.04
+
+# 防止 tzdata 卡住
+ENV DEBIAN_FRONTEND=noninteractive
+
+# 安装依赖（添加构建工具）
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    wget curl git bzip2 ca-certificates libglib2.0-0 libxext6 libsm6 libxrender1 \
+    build-essential g++ gcc cmake \
+    && rm -rf /var/lib/apt/lists/*
+
+# 安装 Miniconda (Python 3.9)
+ENV CONDA_DIR=/opt/conda
+RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py39_24.1.2-0-Linux-x86_64.sh -O /tmp/miniconda.sh && \
+    bash /tmp/miniconda.sh -b -p $CONDA_DIR && \
+    rm /tmp/miniconda.sh
+ENV PATH=$CONDA_DIR/bin:$PATH
+
+# 拷贝conda环境文件
+WORKDIR /workspace/diffusion_policy
+COPY conda_environment.yaml /tmp/conda_environment.yaml
+
+# 创建conda环境（使用项目的环境文件）
+RUN conda env create -f /tmp/conda_environment.yaml && \
+    conda clean -afy
+
+# 默认 SHELL 激活（注意环境名是 robodiff）
+SHELL ["conda", "run", "-n", "robodiff", "/bin/bash", "-c"]
+
+# 拷贝项目文件
+COPY . /workspace/diffusion_policy
+
+# 暴露默认入口（使用 robodiff 环境）
+CMD ["conda", "run", "-n", "robodiff", "python", "train.py", "--config-name=image_pusht_diffusion_policy_cnn.yaml"]
