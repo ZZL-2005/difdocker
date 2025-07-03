@@ -1,3 +1,5 @@
+#在diffusion_policy-main目录下，执行  "docker build -t diffusion-policy ."
+#镜像构建完成后，执行 "docker run --gpus all diffusion-policy"
 # CUDA 12.4 + Ubuntu 22.04 官方运行时镜像
 FROM nvidia/cuda:12.4.0-runtime-ubuntu22.04
 
